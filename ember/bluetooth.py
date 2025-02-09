@@ -27,7 +27,7 @@ def charging_status_str(state):
             return "Plugged In"
 
 class Ember:
-    def __init__(self):
+    def __init__(self, address = None):
         # init settings
         self.client = None
         self.battery_percentage = 0
@@ -41,10 +41,11 @@ class Ember:
         self.liquid_state_message = ""
         self.target_temperature = 0
         self.charging_state = ""
+        self.mac_address = address
 
     async def start(self):
         device = await self.find_ember()
-        await self.connect(device)
+        await self.connect(device.address)
 
         await self.update_battery()
         await self.update_current_temperature()
@@ -55,6 +56,7 @@ class Ember:
         await self.start_notify()
 
     async def find_ember(self) -> BLEDevice:
+        """Finds the device by MAC Address. If none, finds the first device named Ember Ceramic Mug."""
         def callback(device, advertising_data):
             # TODO: do something with incoming data
             print("Received advertising data")
@@ -63,36 +65,14 @@ class Ember:
             pass
 
         async with BleakScanner(callback) as scanner:
-            device = await scanner.find_device_by_name("Ember Ceramic Mug")
+            if self.mac_address is None:
+                device = await scanner.find_device_by_name("Ember Ceramic Mug")
+                self.mac_address = device.address
+            else:
+                device = await scanner.find_device_by_address(self.mac_address)
             return device
 
-    # Copied from docs; TODO: implement ability to scan for ember devices
-    #async def scan(self):
-    #    stop_event = asyncio.Event()
-#
-    #    # TODO: add something that calls stop_event.set()
-#
-    #    def callback(device, advertising_data):
-    #        # TODO: do something with incoming data
-    #        print("Received advertising data")
-    #        print(advertising_data)
-    #        print(device)
-    #        pass
-#
-    #    async with BleakScanner(callback) as scanner:
-    #        # ...
-    #        # Important! Wait for an event to trigger stop, otherwise scanner
-    #        # will stop immediately.
-    #        await stop_event.wait()
-#
-    #    # scanner stops when block exits
-    #    # ...
-
     async def connect(self, addr):
-        stop_event = asyncio.Event()
-        def callback(sender: BleakGATTCharacteristic, data: bytearray):
-            print(f"{sender}: {data}")
-
         self.client = BleakClient(addr)
         await self.client.connect()
         await self.client.pair()

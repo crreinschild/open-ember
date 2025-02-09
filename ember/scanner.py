@@ -54,4 +54,4 @@ class Scanner:
 
 
 #Scanner().display()
-asyncio.run(Scanner().display())
+#asyncio.run(Scanner().display())
