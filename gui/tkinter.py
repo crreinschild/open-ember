@@ -53,7 +53,7 @@ class Window(tk.Tk):
     def set_temperature(self):
         choice = simpledialog.askfloat("Choose Temperature", "Choose Temperature, 0 for off", minvalue=0.0)
         if choice is not None:
-            asyncio.get_event_loop().run_until_complete(self.ember.set_target_temperature(float(choice)))
+            asyncio.get_running_loop().create_task(self.ember.set_target_temperature(float(choice)))
 
     def close(self):
         self.root.destroy()
